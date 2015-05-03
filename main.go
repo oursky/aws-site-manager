@@ -25,7 +25,7 @@ func GetCallerReference() string {
 	return t.Format("20060102150405")
 }
 
-func Create(domain string) {
+func Create(domain string, www bool) {
 	svc := s3.New(&aws.Config{Region: "us-west-2"})
 
 	// What it does:
@@ -48,14 +48,18 @@ func Create(domain string) {
 		},
 	}
 
+	aliases := []*string{aws.String(domain)}
+	quantityOfAliases := 1
+	if www == true {
+		aliases = append(aliases, aws.String("www."+domain))
+		quantityOfAliases = 2
+	}
+
 	distributionInput := &cloudfront.CreateDistributionInput{
 		DistributionConfig: &cloudfront.DistributionConfig{
 			Aliases: &cloudfront.Aliases{
-				Quantity: aws.Long(2),
-				Items: []*string{
-					aws.String(domain),
-					aws.String("www." + domain),
-				},
+				Quantity: aws.Long(int64(quantityOfAliases)),
+				Items:    aliases,
 			},
 			CallerReference:   aws.String(GetCallerReference()),
 			Comment:           aws.String(""),
@@ -115,12 +119,13 @@ func Error() {
 
 func main() {
 	domainPtr := flag.String("domain", "", "Domain Name")
+	wwwPtr := flag.Bool("www", true, "Add www for canonical domains")
 	flag.Parse()
 
 	cmd := flag.Arg(0)
 
 	if cmd == "create" {
-		Create(*domainPtr)
+		Create(*domainPtr, *wwwPtr)
 	} else if cmd == "sync" {
 		Sync()
 	} else {
