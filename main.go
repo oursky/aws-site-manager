@@ -3,14 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 )
 import (
 	"github.com/awslabs/aws-sdk-go/aws"
 	"github.com/awslabs/aws-sdk-go/service/cloudfront"
+	"github.com/awslabs/aws-sdk-go/service/iam"
 	"github.com/awslabs/aws-sdk-go/service/s3"
 )
+
+var defaultRegion = "us-west-2"
 
 func DisplayAwsErr(err error) {
 	if awserr := aws.Error(err); awserr != nil {
@@ -20,13 +24,47 @@ func DisplayAwsErr(err error) {
 	}
 }
 
+func CheckErr(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func GetCallerReference() string {
 	t := time.Now().Local()
 	return t.Format("20060102150405")
 }
 
-func Create(domain string, www bool) {
-	svc := s3.New(&aws.Config{Region: "us-west-2"})
+func UploadCert(domain string, certBodyPath string, certChainPath string, privateKeyPath string) string {
+	svc := iam.New(nil)
+
+	certBody, err := ioutil.ReadFile(certBodyPath)
+	CheckErr(err)
+	certChain, err := ioutil.ReadFile(certChainPath)
+	CheckErr(err)
+	privateKey, err := ioutil.ReadFile(privateKeyPath)
+	CheckErr(err)
+
+	uploadCertInput := &iam.UploadServerCertificateInput{
+		CertificateBody:       aws.String(string(certBody)),
+		CertificateChain:      aws.String(string(certChain)),
+		PrivateKey:            aws.String(string(privateKey)),
+		ServerCertificateName: aws.String(domain),
+		Path: aws.String("/cloudfront/production/"),
+	}
+
+	resp, err := svc.UploadServerCertificate(uploadCertInput)
+
+	if err != nil {
+		panic(err)
+	} else {
+		fmt.Println(resp.ServerCertificateMetadata.ServerCertificateID)
+		return *resp.ServerCertificateMetadata.ServerCertificateID
+	}
+}
+
+func Create(domain string, www bool, certID string) {
+	svc := s3.New(&aws.Config{Region: defaultRegion})
 
 	// What it does:
 	// Step 1: Create new bucket with domain name
@@ -53,6 +91,11 @@ func Create(domain string, www bool) {
 	if www == true {
 		aliases = append(aliases, aws.String("www."+domain))
 		quantityOfAliases = 2
+	}
+
+	viewerCertificate := &cloudfront.ViewerCertificate{
+		IAMCertificateID: aws.String(certID),
+		SSLSupportMethod: aws.String("sni-only"),
 	}
 
 	distributionInput := &cloudfront.CreateDistributionInput{
@@ -95,6 +138,10 @@ func Create(domain string, www bool) {
 		},
 	}
 
+	if certID != "" {
+		distributionInput.DistributionConfig.ViewerCertificate = viewerCertificate
+	}
+
 	_, err := svc.CreateBucket(bucketInput)
 	DisplayAwsErr(err)
 
@@ -120,12 +167,24 @@ func Error() {
 func main() {
 	domainPtr := flag.String("domain", "", "Domain Name")
 	wwwPtr := flag.Bool("www", true, "Add www for canonical domains")
+	sslPtr := flag.Bool("ssl", false, "Use SSL")
+	certBodyPtr := flag.String("certBody", "", "Path to PEM format Certificate Body")
+	certChainPtr := flag.String("certChain", "", "Path to PEM format Certificate Chain")
+	privateKeyPtr := flag.String("privateKey", "", "Path to PEM format Private Key")
+	reUploadPtr := flag.Bool("reupload", false, "Force an reupload when sync")
 	flag.Parse()
 
 	cmd := flag.Arg(0)
 
 	if cmd == "create" {
-		Create(*domainPtr, *wwwPtr)
+		certID := ""
+		if *sslPtr == true {
+			if *certBodyPtr == "" || *certChainPtr == "" || *privateKeyPtr == "" {
+				panic("Require Cert Body, Cert Chain and Private Key if ssl is true")
+			}
+			certID = UploadCert(*domainPtr, *certBodyPtr, *certChainPtr, *privateKeyPtr)
+		}
+		Create(*domainPtr, *wwwPtr, certID)
 	} else if cmd == "sync" {
 		Sync()
 	} else {
