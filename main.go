@@ -154,10 +154,6 @@ func Create(domain string, www bool, certID string) {
 	DisplayAwsErr(err)
 }
 
-func Sync() {
-	fmt.Println("TODO: Sync not implemented")
-}
-
 func Error() {
 	fmt.Println("Usage: " + os.Args[0] + " [create|sync]")
 	fmt.Println("Make sure credentials file setup: http://blogs.aws.amazon.com/security/post/Tx3D6U6WSFGOK2H/A-New-and-Standardized-Way-to-Manage-Credentials-in-the-AWS-SDKs")
@@ -172,6 +168,8 @@ func main() {
 	certChainPtr := flag.String("certChain", "", "Path to PEM format Certificate Chain")
 	privateKeyPtr := flag.String("privateKey", "", "Path to PEM format Private Key")
 	reUploadPtr := flag.Bool("reupload", false, "Force an reupload when sync")
+	concurrentNumPtr := flag.Int("concurrent", 4, "Number of concurrent upload to S3")
+	pathPtr := flag.String("path", ".", "Path of files to upload")
 	flag.Parse()
 
 	cmd := flag.Arg(0)
@@ -186,7 +184,7 @@ func main() {
 		}
 		Create(*domainPtr, *wwwPtr, certID)
 	} else if cmd == "sync" {
-		Sync()
+		Sync(*domainPtr, *pathPtr, *reUploadPtr, *concurrentNumPtr)
 	} else {
 		Error()
 	}
