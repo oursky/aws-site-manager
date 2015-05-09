@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -27,6 +28,8 @@ var contentTypeMap = map[string]string{
 	"gif":  "image/gif",
 	"png":  "image/png",
 	"xml":  "application/xml",
+	"svg":  "image/svg+xml",
+	"jpeg": "image/jpeg",
 }
 
 var compressBlacklist = map[string]bool{
@@ -171,10 +174,19 @@ func UploadFileHandler(localFilesChan chan *FileInfo, wg *sync.WaitGroup, bucket
 
 			contentEncoding = "gzip"
 		}
+
+		// Determine MIME type quick
 		contentType, ok := contentTypeMap[suffix]
 		if !ok {
-			contentType = "application/octet-stream"
-			fmt.Println("Unknown ext: " + suffix)
+			f, err := os.Open(file.path)
+			CheckErr(err)
+
+			byte512 := make([]byte, 512)
+			_, err = f.Read(byte512)
+			CheckErr(err)
+
+			contentType = http.DetectContentType(byte512)
+			fmt.Println("Detected MIME: " + contentType)
 		}
 
 		hash, err := Hashfile(uploadPath)
