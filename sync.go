@@ -7,9 +7,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -216,14 +216,10 @@ func UploadFileHandler(localFilesChan chan *FileInfo, wg *sync.WaitGroup, bucket
 		DisplayAwsErr(err)
 
 		if err == nil {
-			doneChan <- aws.String(EscapeURLForCF("/" + file.key))
+			key, _ := url.ParseRequestURI("/" + file.key)
+			doneChan <- aws.String(key.String())
 		}
 	}
-}
-
-func EscapeURLForCF(url string) string {
-	re := regexp.MustCompile(" ")
-	return re.ReplaceAllLiteralString(url, "%20")
 }
 
 func GetAllFiles(dirname string, localFilesChan chan *FileInfo) {
