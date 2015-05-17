@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 )
 import (
@@ -20,6 +21,9 @@ func DisplayAwsErr(err error) {
 	if awserr := aws.Error(err); awserr != nil {
 		fmt.Println("Error:", awserr.Code, awserr.Message)
 	} else if err != nil {
+		if strings.Contains(err.Error(), "security-credentials") {
+			displayAwsCredentialHelp()
+		}
 		panic(err)
 	}
 }
@@ -154,10 +158,11 @@ func Create(domain string, www bool, certID string) {
 	DisplayAwsErr(err)
 }
 
-func Error() {
-	fmt.Println("Usage: " + os.Args[0] + " [create|sync]")
+func displayAwsCredentialHelp() {
 	fmt.Println("Make sure credentials file setup: http://blogs.aws.amazon.com/security/post/Tx3D6U6WSFGOK2H/A-New-and-Standardized-Way-to-Manage-Credentials-in-the-AWS-SDKs")
-	os.Exit(1)
+	fmt.Println()
+}
+
 func checkDomain(c *cli.Context) {
 	if !c.IsSet("domain") {
 		fmt.Println("Domain was not set")
