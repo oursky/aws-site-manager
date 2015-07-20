@@ -100,10 +100,12 @@ func Create(domain string, www bool, certID string) {
 				Quantity: aws.Long(1),
 				Items: []*cloudfront.Origin{
 					&cloudfront.Origin{
-						DomainName: aws.String(domain + ".s3.amazonaws.com"),
+						DomainName: aws.String(domain + ".s3-website-" + defaultRegion + ".amazonaws.com"),
 						ID:         aws.String("S3-" + domain + "-SITE"),
-						S3OriginConfig: &cloudfront.S3OriginConfig{
-							OriginAccessIdentity: aws.String(""),
+						CustomOriginConfig: &cloudfront.CustomOriginConfig{
+							HTTPPort:             aws.Long(80),
+							HTTPSPort:            aws.Long(443),
+							OriginProtocolPolicy: aws.String("http-only"),
 						},
 					},
 				},
