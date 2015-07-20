@@ -7,20 +7,24 @@ import (
 	"time"
 )
 import (
-	"github.com/awslabs/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/codegangsta/cli"
 )
 
 var defaultRegion = "us-west-2"
 
 func DisplayAwsErr(err error) {
-	if awserr := aws.Error(err); awserr != nil {
-		fmt.Println("Error:", awserr.Code, awserr.Message)
-	} else if err != nil {
+	if err != nil {
 		if strings.Contains(err.Error(), "security-credentials") {
 			displayAwsCredentialHelp()
+			os.Exit(1)
 		}
-		panic(err)
+		if awsErr, ok := err.(awserr.Error); ok {
+			fmt.Println("Error:", awsErr.Code(), awsErr.Message(), awsErr.OrigErr())
+			if reqErr, ok := err.(awserr.RequestFailure); ok {
+				fmt.Println(reqErr.Code(), reqErr.Message(), reqErr.StatusCode(), reqErr.RequestID())
+			}
+		}
 	}
 }
 

@@ -6,10 +6,10 @@ import (
 )
 
 import (
-	"github.com/awslabs/aws-sdk-go/aws"
-	"github.com/awslabs/aws-sdk-go/service/cloudfront"
-	"github.com/awslabs/aws-sdk-go/service/iam"
-	"github.com/awslabs/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudfront"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 func UploadCert(domain string, certBodyPath string, certChainPath string, privateKeyPath string) string {
@@ -31,13 +31,9 @@ func UploadCert(domain string, certBodyPath string, certChainPath string, privat
 	}
 
 	resp, err := svc.UploadServerCertificate(uploadCertInput)
-
-	if err != nil {
-		panic(err)
-	} else {
-		fmt.Println(resp.ServerCertificateMetadata.ServerCertificateID)
-		return *resp.ServerCertificateMetadata.ServerCertificateID
-	}
+	DisplayAwsErr(err)
+	fmt.Println(resp.ServerCertificateMetadata.ServerCertificateID)
+	return *resp.ServerCertificateMetadata.ServerCertificateID
 }
 
 func Create(domain string, www bool, certID string) {
