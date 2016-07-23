@@ -8,10 +8,9 @@ import (
 )
 import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/codegangsta/cli"
 )
-
-var defaultRegion = "us-west-2"
 
 func DisplayAwsErr(err error) {
 	if err != nil {
@@ -53,6 +52,8 @@ func checkDomain(c *cli.Context) {
 }
 
 func main() {
+	sess := session.New()
+
 	app := cli.NewApp()
 	app.Name = "aws-site-manager"
 	app.Usage = "Crete and sync static site with S3 and Cloudfront"
@@ -98,7 +99,7 @@ func main() {
 					}
 					certID = UploadCert(c.String("domain"), c.String("certBody"), c.String("certChain"), c.String("privateKey"))
 				}
-				Create(c.String("domain"), c.BoolT("www"), certID)
+				Create(sess, c.String("domain"), c.BoolT("www"), certID)
 			},
 		},
 		{
@@ -128,7 +129,7 @@ func main() {
 			},
 			Action: func(c *cli.Context) {
 				checkDomain(c)
-				Sync(c.String("domain"), c.String("path"), c.Bool("reupload"), c.Int("concurrent"))
+				Sync(sess, c.String("domain"), c.String("path"), c.Bool("reupload"), c.Int("concurrent"))
 			},
 		},
 	}

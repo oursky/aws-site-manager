@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudfront"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
@@ -47,8 +48,8 @@ type FileInfo struct {
 	fileInfo os.FileInfo
 }
 
-func Sync(bucket string, path string, reUpload bool, concurrentNum int) {
-	svc := s3.New(&aws.Config{Region: defaultRegion})
+func Sync(sess *session.Session, bucket string, path string, reUpload bool, concurrentNum int) {
+	svc := s3.New(sess)
 
 	listObjOutput, err := svc.ListObjects(&s3.ListObjectsInput{
 		Bucket: aws.String(bucket),
@@ -74,7 +75,7 @@ func Sync(bucket string, path string, reUpload bool, concurrentNum int) {
 
 	wg.Add(concurrentNum)
 	for i := 0; i < concurrentNum; i++ {
-		go UploadFileHandler(localFilesChan, &wg, bucket, &s3Keys, reUpload, doneChan)
+		go UploadFileHandler(sess, localFilesChan, &wg, bucket, &s3Keys, reUpload, doneChan)
 	}
 
 	go func() {
@@ -92,7 +93,7 @@ func InvalidCloudFront(domain string, paths *[]*string) {
 		return
 	}
 
-	distributionID := ""
+	distributionId := ""
 
 	svc := cloudfront.New(nil)
 
@@ -105,26 +106,26 @@ func InvalidCloudFront(domain string, paths *[]*string) {
 	for _, distribution := range resp.DistributionList.Items {
 		for _, cname := range distribution.Aliases.Items {
 			if *cname == domain {
-				distributionID = *distribution.ID
+				distributionId = *distribution.Id
 			}
 		}
-		if distributionID != "" {
+		if distributionId != "" {
 			break
 		}
 	}
 
 	invalidationInput := &cloudfront.CreateInvalidationInput{
-		DistributionID: aws.String(distributionID),
+		DistributionId: aws.String(distributionId),
 		InvalidationBatch: &cloudfront.InvalidationBatch{
 			CallerReference: aws.String(GetCallerReference()),
 			Paths: &cloudfront.Paths{
-				Quantity: aws.Long(int64(len(*paths))),
+				Quantity: aws.Int64(int64(len(*paths))),
 				Items:    *paths,
 			},
 		},
 	}
 
-	fmt.Println("Send invalidate to Dist ID: " + distributionID)
+	fmt.Println("Send invalidate to Dist ID: " + distributionId)
 	for _, key := range *paths {
 		fmt.Println(*key)
 	}
@@ -146,8 +147,8 @@ func Hashfile(filename string) (string, error) {
 	return hashVal, nil
 }
 
-func UploadFileHandler(localFilesChan chan *FileInfo, wg *sync.WaitGroup, bucket string, s3Keys *map[string]string, reUpload bool, doneChan chan *string) {
-	svc := s3.New(&aws.Config{Region: defaultRegion})
+func UploadFileHandler(sess *session.Session, localFilesChan chan *FileInfo, wg *sync.WaitGroup, bucket string, s3Keys *map[string]string, reUpload bool, doneChan chan *string) {
+	svc := s3.New(sess)
 	defer wg.Done()
 
 	for file := range localFilesChan {
