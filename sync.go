@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudfront"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 var contentTypeMap = map[string]string{
@@ -71,11 +72,13 @@ func Sync(sess *session.Session, bucket string, path string, reUpload bool, conc
 	doneChan := make(chan *string, 100)
 	wg := sync.WaitGroup{}
 
+	uploader := s3manager.NewUploader(sess)
+
 	go GetAllFiles(path, localFilesChan)
 
 	wg.Add(concurrentNum)
 	for i := 0; i < concurrentNum; i++ {
-		go UploadFileHandler(sess, localFilesChan, &wg, bucket, &s3Keys, reUpload, doneChan)
+		go UploadFileHandler(uploader, localFilesChan, &wg, bucket, &s3Keys, reUpload, doneChan)
 	}
 
 	go func() {
@@ -147,8 +150,7 @@ func Hashfile(filename string) (string, error) {
 	return hashVal, nil
 }
 
-func UploadFileHandler(sess *session.Session, localFilesChan chan *FileInfo, wg *sync.WaitGroup, bucket string, s3Keys *map[string]string, reUpload bool, doneChan chan *string) {
-	svc := s3.New(sess)
+func UploadFileHandler(uploader *s3manager.Uploader, localFilesChan chan *FileInfo, wg *sync.WaitGroup, bucket string, s3Keys *map[string]string, reUpload bool, doneChan chan *string) {
 	defer wg.Done()
 
 	for file := range localFilesChan {
@@ -203,7 +205,7 @@ func UploadFileHandler(sess *session.Session, localFilesChan chan *FileInfo, wg 
 		fmt.Println("Uploading: " + uploadPath + " as " + file.key)
 		fileIO, err := os.Open(uploadPath)
 
-		paramsPutObject := &s3.PutObjectInput{
+		upParams := &s3manager.UploadInput{
 			Bucket:          aws.String(bucket),
 			Key:             aws.String(file.key),
 			Body:            fileIO,
@@ -212,7 +214,7 @@ func UploadFileHandler(sess *session.Session, localFilesChan chan *FileInfo, wg 
 			ContentType:     aws.String(contentType),
 			ACL:             aws.String("public-read"),
 		}
-		_, err = svc.PutObject(paramsPutObject)
+		_, err = uploader.Upload(upParams)
 
 		DisplayAwsErr(err)
 
