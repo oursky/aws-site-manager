@@ -51,21 +51,21 @@ type FileInfo struct {
 func Sync(sess *session.Session, bucket string, path string, reUpload bool, concurrentNum int) {
 	svc := s3.New(sess)
 
-	listObjOutput, err := svc.ListObjects(&s3.ListObjectsInput{
-		Bucket: aws.String(bucket),
-	})
-
-	DisplayAwsErr(err)
-
 	s3Keys := map[string]string{}
 	updatedKeys := make([]*string, 0, 100)
 
-	for _, s3Object := range listObjOutput.Contents {
-		etag := *s3Object.ETag
-		etag = etag[1 : len(etag)-1]
-		s3Keys[*s3Object.Key] = etag
-	}
-	// TODO: Fix truncated result
+	err := svc.ListObjectsV2Pages(&s3.ListObjectsV2Input{
+		Bucket: aws.String(bucket),
+	}, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
+		for _, s3Object := range page.Contents {
+			etag := *s3Object.ETag
+			etag = etag[1 : len(etag)-1]
+			s3Keys[*s3Object.Key] = etag
+		}
+		return true
+	})
+
+	DisplayAwsErr(err)
 
 	localFilesChan := make(chan *FileInfo, 100)
 	doneChan := make(chan *string, 100)
