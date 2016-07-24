@@ -82,6 +82,7 @@ func Create(sess *session.Session, domain string, www bool, certID string) {
 			Comment:           aws.String(""),
 			DefaultRootObject: aws.String("index.html"),
 			DefaultCacheBehavior: &cloudfront.DefaultCacheBehavior{
+				Compress: aws.Bool(true),
 				ForwardedValues: &cloudfront.ForwardedValues{
 					Cookies: &cloudfront.CookiePreference{
 						Forward: aws.String("none"),
