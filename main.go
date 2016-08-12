@@ -7,9 +7,10 @@ import (
 	"time"
 )
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/codegangsta/cli"
+	"gopkg.in/urfave/cli.v1"
 )
 
 func DisplayAwsErr(err error) {
@@ -52,11 +53,12 @@ func checkDomain(c *cli.Context) {
 }
 
 func main() {
-	sess := session.New()
+	sess := session.New(&aws.Config{Region: aws.String("us-east-1")})
 
 	app := cli.NewApp()
 	app.Name = "aws-site-manager"
 	app.Usage = "Crete and sync static site with S3 and Cloudfront"
+	app.Version = "0.1"
 	app.Commands = []cli.Command{
 		{
 			Name:    "create",
@@ -70,7 +72,11 @@ func main() {
 				},
 				cli.BoolTFlag{
 					Name:  "www",
-					Usage: "add www for canonical domains",
+					Usage: "add www for canonical domains, redirect www to naked domain",
+				},
+				cli.BoolTFlag{
+					Name:  "www-noredirect",
+					Usage: "add www for canonical domains, but don't redirect www to naked domain",
 				},
 				cli.BoolFlag{
 					Name:  "ssl",
@@ -99,7 +105,7 @@ func main() {
 					}
 					certID = UploadCert(c.String("domain"), c.String("certBody"), c.String("certChain"), c.String("privateKey"))
 				}
-				Create(sess, c.String("domain"), c.BoolT("www"), certID)
+				Create(sess, c.String("domain"), c.BoolT("www") || c.BoolT("www-noredirect"), certID)
 			},
 		},
 		{
