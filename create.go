@@ -37,7 +37,7 @@ func UploadCert(domain string, certBodyPath string, certChainPath string, privat
 	return *resp.ServerCertificateMetadata.ServerCertificateId
 }
 
-func Create(sess *session.Session, domain string, www bool, certID string) {
+func Create(sess *session.Session, domain string, www bool, certID string, noWWWRedirect bool, noHttpRedirect bool) {
 	svc := s3.New(sess)
 
 	// What it does:
@@ -58,6 +58,24 @@ func Create(sess *session.Session, domain string, www bool, certID string) {
 				Suffix: aws.String("index.html"), // Required
 			},
 		},
+	}
+
+	var wwwBucketInput *s3.CreateBucketInput
+	var wwwWebsiteInput *s3.PutBucketWebsiteInput
+
+	if www == true && noWWWRedirect == false {
+		wwwBucketInput = &s3.CreateBucketInput{
+			Bucket: aws.String("www." + domain), // Required
+		}
+
+		wwwWebsiteInput = &s3.PutBucketWebsiteInput{
+			Bucket: aws.String("www." + domain),
+			WebsiteConfiguration: &s3.WebsiteConfiguration{
+				RedirectAllRequestsTo: &s3.RedirectAllRequestsTo{
+					HostName: aws.String(domain),
+				},
+			},
+		}
 	}
 
 	aliases := []*string{aws.String(domain)}
@@ -117,6 +135,9 @@ func Create(sess *session.Session, domain string, www bool, certID string) {
 
 	if certID != "" {
 		distributionInput.DistributionConfig.ViewerCertificate = viewerCertificate
+		if noHttpRedirect == false {
+			distributionInput.DistributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy = aws.String("redirect-to-https")
+		}
 	}
 
 	_, err := svc.CreateBucket(bucketInput)
@@ -125,7 +146,15 @@ func Create(sess *session.Session, domain string, www bool, certID string) {
 	_, err = svc.PutBucketWebsite(websiteInput)
 	DisplayAwsErr(err)
 
-	cf := cloudfront.New(nil)
+	if wwwBucketInput != nil && wwwWebsiteInput != nil {
+		_, err = svc.CreateBucket(wwwBucketInput)
+		DisplayAwsErr(err)
+
+		_, err = svc.PutBucketWebsite(wwwWebsiteInput)
+		DisplayAwsErr(err)
+	}
+
+	cf := cloudfront.New(sess)
 
 	_, err = cf.CreateDistribution(distributionInput)
 	DisplayAwsErr(err)

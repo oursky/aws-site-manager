@@ -76,10 +76,6 @@ func main() {
 					Name:  "www",
 					Usage: "add www for canonical domains, redirect www to naked domain",
 				},
-				cli.BoolTFlag{
-					Name:  "www-noredirect",
-					Usage: "add www for canonical domains, but don't redirect www to naked domain",
-				},
 				cli.BoolFlag{
 					Name:  "ssl",
 					Usage: "use ssl",
@@ -96,6 +92,14 @@ func main() {
 					Name:  "privateKey",
 					Usage: "path to PEM format private key",
 				},
+				cli.BoolFlag{
+					Name:  "no-www-redirect",
+					Usage: "don't redirect www to naked domain (if --www is set)",
+				},
+				cli.BoolFlag{
+					Name:  "no-http-redirect",
+					Usage: "don't redirect http to https domain (if --ssl is set)",
+				},
 			},
 			Action: func(c *cli.Context) error {
 				checkDomain(c)
@@ -107,7 +111,7 @@ func main() {
 					}
 					certID = UploadCert(c.String("domain"), c.String("certBody"), c.String("certChain"), c.String("privateKey"))
 				}
-				Create(sess, c.String("domain"), c.BoolT("www") || c.BoolT("www-noredirect"), certID)
+				Create(sess, c.String("domain"), c.BoolT("www"), certID, c.Bool("no-www-redirect"), c.Bool("no-http-redirect"))
 				return nil
 			},
 		},
