@@ -97,7 +97,7 @@ func main() {
 					Usage: "path to PEM format private key",
 				},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				checkDomain(c)
 				certID := ""
 				if c.Bool("ssl") {
@@ -108,6 +108,7 @@ func main() {
 					certID = UploadCert(c.String("domain"), c.String("certBody"), c.String("certChain"), c.String("privateKey"))
 				}
 				Create(sess, c.String("domain"), c.BoolT("www") || c.BoolT("www-noredirect"), certID)
+				return nil
 			},
 		},
 		{
@@ -135,14 +136,16 @@ func main() {
 					Value: ".",
 				},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				checkDomain(c)
 				Sync(sess, c.String("domain"), c.String("path"), c.Bool("reupload"), c.Int("concurrent"))
+				return nil
 			},
 		},
 	}
-	app.Action = func(c *cli.Context) {
+	app.Action = func(c *cli.Context) error {
 		cli.ShowAppHelp(c)
+		return nil
 	}
 
 	err = app.Run(os.Args)
