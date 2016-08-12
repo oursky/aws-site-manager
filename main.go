@@ -24,6 +24,7 @@ func DisplayAwsErr(err error) {
 			if reqErr, ok := err.(awserr.RequestFailure); ok {
 				fmt.Println(reqErr.Code(), reqErr.Message(), reqErr.StatusCode(), reqErr.RequestID())
 			}
+			os.Exit(1)
 		}
 	}
 }
