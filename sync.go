@@ -88,17 +88,17 @@ func Sync(sess *session.Session, bucket string, path string, reUpload bool, conc
 	}()
 	wg.Wait()
 
-	InvalidCloudFront(bucket, &updatedKeys)
+	InvalidCloudFront(sess, bucket, &updatedKeys)
 }
 
-func InvalidCloudFront(domain string, paths *[]*string) {
+func InvalidCloudFront(sess *session.Session, domain string, paths *[]*string) {
 	if len(*paths) == 0 {
 		return
 	}
 
 	distributionId := ""
 
-	svc := cloudfront.New(nil)
+	svc := cloudfront.New(sess)
 
 	listDistInput := &cloudfront.ListDistributionsInput{
 	// TODO: Marker: Handle truncated result

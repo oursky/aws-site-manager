@@ -7,7 +7,6 @@ import (
 	"time"
 )
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"gopkg.in/urfave/cli.v1"
@@ -54,7 +53,9 @@ func checkDomain(c *cli.Context) {
 }
 
 func main() {
-	sess := session.New(&aws.Config{Region: aws.String("us-east-1")})
+	sess, err := session.NewSession()
+
+	DisplayAwsErr(err)
 
 	app := cli.NewApp()
 	app.Name = "aws-site-manager"
@@ -144,7 +145,7 @@ func main() {
 		cli.ShowAppHelp(c)
 	}
 
-	err := app.Run(os.Args)
+	err = app.Run(os.Args)
 	if err != nil {
 		fmt.Println(err)
 	}
