@@ -1,5 +1,5 @@
 # aws-site-manager
-A very simple CLI to create S3 / Cloudfront Static Website. You can also reference [our blog](https://code.oursky.com/aws-site-manager-open-source-tool-hosting-static-web-on-s3-cloudfront/) for more details. 
+A very simple CLI to create S3 / Cloudfront Static Website. You can also reference [our blog](https://code.oursky.com/aws-site-manager-opensource-site-hosting-s3-cloudfront/) for more details. 
 
 <br>
 
