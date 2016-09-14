@@ -59,7 +59,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "aws-site-manager"
-	app.Usage = "Crete and sync static site with S3 and Cloudfront"
+	app.Usage = "Create and sync static site with S3 and Cloudfront"
 	app.Version = "0.1"
 	app.Commands = []cli.Command{
 		{
