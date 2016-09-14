@@ -1,0 +1,14 @@
+package: github.com/oursky/aws-site-manager
+import:
+- package: github.com/aws/aws-sdk-go
+  version: ^1.4.9
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/session
+  - service/cloudfront
+  - service/iam
+  - service/s3
+  - service/s3/s3manager
+- package: gopkg.in/urfave/cli.v1
+  version: ^1.18.1
