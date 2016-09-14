@@ -6,9 +6,9 @@ A very simple CLI to create S3 / Cloudfront Static Website. You can also referen
 
 ## Install it
 
-Binary downloads for Linux / Mac / Windows coming soon
+Download binary from latest release: https://github.com/oursky/aws-site-manager/releases/
 
-If you have Go 1.6 or above installed, run the following command:
+Compile from source: if you have Go 1.6 or above installed, run the following command:
 
 ~~~~
 go get -u github.com/oursky/aws-site-manager
