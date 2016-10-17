@@ -157,7 +157,7 @@ func UploadFileHandler(uploader *s3manager.Uploader, localFilesChan chan *FileIn
 		uploadPath := file.path
 
 		contentEncoding := ""
-		suffix := strings.ToLower(filepath.Ext(file.path))
+		suffix := strings.TrimPrefix(strings.ToLower(filepath.Ext(file.path)), ".")
 		if !compressBlacklist[suffix] && file.fileInfo.Size() > 500 {
 			fmt.Println("Compressing: " + file.path)
 
