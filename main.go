@@ -72,7 +72,7 @@ func main() {
 					Value: "",
 					Usage: "domain name of the site (without www)",
 				},
-				cli.BoolTFlag{
+				cli.BoolFlag{
 					Name:  "www",
 					Usage: "add www for canonical domains, redirect www to naked domain",
 				},
