@@ -40,6 +40,11 @@ You should also set the environment variable of AWS_SDK_LOAD_CONFIG (or put the 
 ~~~~
 export AWS_SDK_LOAD_CONFIG=1
 ~~~~
+
+If you have multiple profiles, you can specify it with env var AWS_PROFILE (which is [default] if missed)
+
+For security best practices, you can use an AWS IAM users with appropriate S3 and Cloudfront permission. The Create command also need IAM permission for upload of HTTPS certificate.
+
 You can read more about AWS CLI set up on its [official documentation] (http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html).
 
 <br>
