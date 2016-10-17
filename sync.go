@@ -186,7 +186,9 @@ func UploadFileHandler(uploader *s3manager.Uploader, localFilesChan chan *FileIn
 
 			byte512 := make([]byte, 512)
 			_, err = f.Read(byte512)
-			CheckErr(err)
+			if err != io.EOF {
+				CheckErr(err)
+			}
 
 			contentType = http.DetectContentType(byte512)
 			fmt.Println("Detected MIME: " + contentType)
