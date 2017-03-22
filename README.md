@@ -24,8 +24,8 @@ go install github.com/oursky/aws-site-manager
 If you haven't set up AWS credentials on your environment before, you shall set it up by putting the following lines in ~/.aws/credentials.
 ~~~~
 [default]
-AWS_ACCESS_KEY_ID=[MY_KEY_ID]
-AWS_SECRET_ACCESS_KEY=[MY_SECRET_KEY]
+aws_access_key_id=[MY_KEY_ID]
+aws_secret_access_key=[MY_SECRET_KEY]
 
 ~~~~
 And in ~/.aws/config
